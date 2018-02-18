@@ -19,10 +19,12 @@ from telegram.ext import Updater, MessageHandler, Filters
 from settings import SETTINGS
 
 chatbot = None
+CONVERSATION_ID = 0
 
 
 def main():
     global chatbot
+    global CONVERSATION_ID
     chatbot = ChatBot(
         SETTINGS['BOT_NAME'],
         logic_adapters=['chatterbot.logic.BestMatch'],
@@ -30,6 +32,7 @@ def main():
         database=SETTINGS['DATABASE_FILE'],
         read_only=SETTINGS['READ_ONLY']
     )
+    CONVERSATION_ID = chatbot.storage.create_conversation()
     updater = Updater(token=SETTINGS['BOT_TOKEN'])
     dispatcher = updater.dispatcher
     echo_handler = MessageHandler(Filters.text & ~ (Filters.forwarded | Filters.reply), echo)
@@ -47,26 +50,27 @@ def echo(bot, update):
     """
     if SETTINGS['TESTING'] and not update.message.chat.id == SETTINGS['TESTING_CHAT_ID']:
         return
-    response = str(chatbot.get_response(update.message.text))
+    statement, response = chatbot.generate_response(Statement(update.message.text), CONVERSATION_ID)
     if SETTINGS['PREMODERATION']:
         correct_response = input(
             ' = Premoderation =\n'
             'Chat: {} (ID {})\n'
             'Question: {}\n'
             'Response: {}\n'
-            ' >> '.format(update.message.chat.title, update.message.chat.id, update.message.text, response))
+            ' >> '.format(update.message.chat.title, update.message.chat.id, update.message.text, str(response)))
         print()
         if correct_response:
             if correct_response.lower().strip().startswith('remove$'):
                 correct_response = correct_response.replace('remove$', '')
-                chatbot.storage.remove(response)
+                chatbot.storage.remove(str(response))
             if correct_response.lower().strip() == 'pass':
                 return
-            response = correct_response
-            chatbot.learn_response(Statement(response), Statement(update.message.text))
+            response = Statement(correct_response)
+            chatbot.learn_response(response, Statement(update.message.text))
+            chatbot.storage.add_to_conversation(CONVERSATION_ID, statement, response)
     else:
-        sleep(SETTINGS['DELAY'] * len(response))
-    bot.send_message(chat_id=update.message.chat.id, text=response)
+        sleep(SETTINGS['DELAY'] * len(str(response)))
+    bot.send_message(chat_id=update.message.chat.id, text=str(response))
 
 
 if __name__ == '__main__':
