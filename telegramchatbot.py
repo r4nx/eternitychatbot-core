@@ -35,7 +35,8 @@ def main():
     CONVERSATION_ID = chatbot.storage.create_conversation()
     updater = Updater(token=SETTINGS['BOT_TOKEN'])
     dispatcher = updater.dispatcher
-    echo_handler = MessageHandler(Filters.text & ~ (Filters.forwarded | Filters.reply), echo)
+    echo_handler = MessageHandler(Filters.text & ~ (Filters.forwarded | Filters.reply) &
+                                  Filters.chat(SETTINGS['TESTING_CHAT_ID']) if SETTINGS['TESTING'] else None, echo)
     dispatcher.add_handler(echo_handler)
     try:
         updater.start_polling()
@@ -48,8 +49,6 @@ def echo(bot, update):
     :type bot: telegram.bot.Bot
     :type update: telegram.update.Update
     """
-    if SETTINGS['TESTING'] and not update.message.chat.id == SETTINGS['TESTING_CHAT_ID']:
-        return
     statement, response = chatbot.generate_response(Statement(update.message.text), CONVERSATION_ID)
     if SETTINGS['PREMODERATION']:
         correct_response = input(
@@ -57,7 +56,9 @@ def echo(bot, update):
             'Chat: {} (ID {})\n'
             'Question: {}\n'
             'Response: {}\n'
-            ' >> '.format(update.message.chat.title, update.message.chat.id, update.message.text, str(response)))
+            ' >> '.format(
+                update.message.chat.first_name if update.message.chat.type == update.message.chat.PRIVATE else
+                update.message.chat.title, update.message.chat.id, update.message.text, str(response)))
         print()
         if correct_response:
             if correct_response.lower().strip().startswith('remove$'):
