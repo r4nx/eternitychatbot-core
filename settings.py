@@ -6,7 +6,7 @@ SETTINGS = {
     'BOT_TOKEN': '',
     'DATABASE_FILE': '',
     'CONVERSATIONS_FILE': '',
-    'READ_ONLY': True,
+    'SELF_TRAINING': True,
     'PREMODERATION': True,
     'DELAY': 0,
     'TESTING': False,

@@ -19,6 +19,7 @@ from telegram.ext import Updater, MessageHandler, Filters
 from settings import SETTINGS
 
 chatbot = None
+previous_message = None
 CONVERSATION_ID = 0
 
 
@@ -29,8 +30,7 @@ def main():
         SETTINGS['BOT_NAME'],
         logic_adapters=['chatterbot.logic.BestMatch'],
         filters=['chatterbot.filters.RepetitiveResponseFilter'],
-        database=SETTINGS['DATABASE_FILE'],
-        read_only=SETTINGS['READ_ONLY']
+        database=SETTINGS['DATABASE_FILE']
     )
     CONVERSATION_ID = chatbot.storage.create_conversation()
     updater = Updater(token=SETTINGS['BOT_TOKEN'])
@@ -71,6 +71,11 @@ def echo(bot, update):
             chatbot.storage.add_to_conversation(CONVERSATION_ID, statement, response)
     else:
         sleep(SETTINGS['DELAY'] * len(str(response)))
+    global previous_message
+    if SETTINGS['SELF_TRAINING'] and previous_message and '?' in previous_message:
+        chatbot.learn_response(Statement(update.message.text), Statement(previous_message))
+        chatbot.storage.add_to_conversation(CONVERSATION_ID, statement, Statement(update.message.text))
+    previous_message = str(response)
     bot.send_message(chat_id=update.message.chat.id, text=str(response))
 
 
