@@ -71,11 +71,12 @@ def echo(bot, update):
             chatbot.storage.add_to_conversation(CONVERSATION_ID, statement, response)
     else:
         sleep(SETTINGS['DELAY'] * len(str(response)))
-    global previous_message
-    if SETTINGS['SELF_TRAINING'] and previous_message and '?' in previous_message:
-        chatbot.learn_response(Statement(update.message.text), Statement(previous_message))
-        chatbot.storage.add_to_conversation(CONVERSATION_ID, statement, Statement(update.message.text))
-    previous_message = str(response)
+    if SETTINGS['SELF_TRAINING']:
+        global previous_message
+        if previous_message and '?' in previous_message:
+            chatbot.learn_response(Statement(update.message.text), Statement(previous_message))
+            chatbot.storage.add_to_conversation(CONVERSATION_ID, statement, Statement(update.message.text))
+        previous_message = str(response)
     bot.send_message(chat_id=update.message.chat.id, text=str(response))
 
 
