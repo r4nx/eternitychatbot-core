@@ -10,6 +10,7 @@
 # This document may not be reproduced or transmitted in any form,
 # in whole or in part, without the express written permission of Ranx.
 
+import logging
 from time import sleep
 
 from chatterbot import ChatBot
@@ -24,6 +25,7 @@ CONVERSATION_ID = 0
 
 
 def main():
+    initialize_logger()
     global chatbot
     global CONVERSATION_ID
     chatbot = ChatBot(
@@ -38,6 +40,7 @@ def main():
     echo_handler = MessageHandler(Filters.text & ~ (Filters.forwarded | Filters.reply) &
                                   Filters.chat(SETTINGS['TESTING_CHAT_ID']) if SETTINGS['TESTING'] else None, echo)
     dispatcher.add_handler(echo_handler)
+    logging.info('Bot started!')
     try:
         updater.start_polling()
     except (KeyboardInterrupt, EOFError, SystemExit):
@@ -70,6 +73,7 @@ def echo(bot, update):
             chatbot.learn_response(response, Statement(update.message.text))
             chatbot.storage.add_to_conversation(CONVERSATION_ID, statement, response)
     else:
+        logging.info('(Chat {}) Q: "{}" A: "{}"'.format(update.message.chat.id, update.message.text, str(response)))
         sleep(SETTINGS['DELAY'] * len(str(response)))
     if SETTINGS['SELF_TRAINING']:
         global previous_message
@@ -78,6 +82,24 @@ def echo(bot, update):
             chatbot.storage.add_to_conversation(CONVERSATION_ID, statement, Statement(update.message.text))
         previous_message = str(response)
     bot.send_message(chat_id=update.message.chat.id, text=str(response))
+
+
+def initialize_logger():
+    logger = logging.getLogger()
+    logger.setLevel(SETTINGS['CONSOLE_LOG_LEVEL'])
+
+    handler = logging.StreamHandler()
+    handler.setLevel(SETTINGS['CONSOLE_LOG_LEVEL'])
+    formatter = logging.Formatter('%(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    if SETTINGS['FILE_LOG_ENABLED']:
+        handler = logging.FileHandler('telegramchatbot.log', encoding=None, delay=True)
+        handler.setLevel(SETTINGS['FILE_LOG_LEVEL'])
+        formatter = logging.Formatter('%(levelname)s - [%(asctime)s] %(filename)s[L:%(lineno)d] %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
 
 
 if __name__ == '__main__':
