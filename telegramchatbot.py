@@ -14,12 +14,15 @@ import logging
 from random import choice
 from time import sleep
 
+import telebot
 from chatterbot import ChatBot
 from chatterbot.conversation import Statement
-from telegram.ext import Updater, MessageHandler, Filters
+
+""":type : telebot.TeleBot"""
 
 from settings import SETTINGS
 
+bot = telebot.TeleBot(SETTINGS['BOT_TOKEN'])
 chatbot = None
 previous_response = None
 CONVERSATION_ID = 0
@@ -36,24 +39,19 @@ def main():
         database=SETTINGS['DATABASE_FILE']
     )
     CONVERSATION_ID = chatbot.storage.create_conversation()
-    updater = Updater(token=SETTINGS['BOT_TOKEN'])
-    dispatcher = updater.dispatcher
-    echo_handler = MessageHandler(Filters.text & ~ (Filters.forwarded | Filters.reply) &
-                                  Filters.chat(SETTINGS['TESTING_CHAT_ID']) if SETTINGS['TESTING'] else None, echo)
-    dispatcher.add_handler(echo_handler)
     logging.info('Bot started!')
     try:
-        updater.start_polling()
+        bot.polling()
     except (KeyboardInterrupt, EOFError, SystemExit):
-        updater.stop()
+        bot.stop_polling()
 
 
-def echo(bot, update):
-    """
-    :type bot: telegram.bot.Bot
-    :type update: telegram.update.Update
-    """
-    statement, response = chatbot.generate_response(Statement(update.message.text), CONVERSATION_ID)
+@bot.message_handler(content_types=['text'],
+                     func=lambda message:
+                     (not SETTINGS['TESTING'] or message.chat.id == SETTINGS['TESTING_CHAT_ID'])
+                     and not (message.forward_date or message.reply_to_message))
+def handle_message(message):
+    statement, response = chatbot.generate_response(Statement(message.text), CONVERSATION_ID)
     if response.confidence <= SETTINGS['LOW_CONFIDENCE_THRESHOLD']:
         response = Statement(choice(SETTINGS['LOW_CONFIDENCE_RESPONSES']))
     global previous_response
@@ -64,8 +62,8 @@ def echo(bot, update):
             'Question: {}\n'
             'Response: {}\n'
             ' >> '.format(
-                update.message.chat.first_name if update.message.chat.type == update.message.chat.PRIVATE else
-                update.message.chat.title, update.message.chat.id, update.message.text, response.text))
+                message.chat.first_name if message.chat.type == 'private' else
+                message.chat.title, message.chat.id, message.text, response.text))
         print()
         if correct_response:
             if correct_response.lower().strip().startswith('remove$'):
@@ -74,10 +72,10 @@ def echo(bot, update):
             if not correct_response or correct_response.isspace() or correct_response.lower().strip() == 'pass':
                 return
             response = Statement(correct_response)
-            chatbot.learn_response(response, Statement(update.message.text))
+            chatbot.learn_response(response, Statement(message.text))
             chatbot.storage.add_to_conversation(CONVERSATION_ID, statement, response)
     else:
-        logging.info('(Chat {}) Q: "{}" A: "{}"'.format(update.message.chat.id, update.message.text, response.text))
+        logging.info('(Chat {}) Q: "{}" A: "{}"'.format(message.chat.id, message.text, response.text))
         if not response.text or response.text.isspace():
             logging.warning('Response is empty or whitespace, sending of the message was canceled.')
             previous_response = None
@@ -85,10 +83,10 @@ def echo(bot, update):
         sleep(SETTINGS['DELAY'] * len(response.text))
     if SETTINGS['SELF_TRAINING']:
         if previous_response and '?' in previous_response:
-            chatbot.learn_response(Statement(update.message.text), Statement(previous_response))
-            chatbot.storage.add_to_conversation(CONVERSATION_ID, statement, Statement(update.message.text))
+            chatbot.learn_response(Statement(message.text), Statement(previous_response))
+            chatbot.storage.add_to_conversation(CONVERSATION_ID, statement, Statement(message.text))
         previous_response = response.text
-    bot.send_message(chat_id=update.message.chat.id, text=response.text)
+    bot.send_message(chat_id=message.chat.id, text=response.text)
 
 
 def initialize_logger():
