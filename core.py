@@ -47,11 +47,11 @@ class AIChatBot:
         self.__low_confidence_responses = low_confidence_responses
         self.__premoderation_callback = premoderation_callback
 
-    def get_response(self, message, premoderation_payload):
+    def get_response(self, question, premoderation_payload):
         """Get response to the message.
 
         Args:
-            message (str): Message.
+            question (str): Message.
             premoderation_payload: Data to pass to premoderation_callback.
 
         Returns:
@@ -59,8 +59,8 @@ class AIChatBot:
 
         """
         # Get supposed response
-        message = Statement(message)
-        response = self.__chatbot.generate_response(message, self.__conversation_id)[1]
+        question = Statement(question)
+        response = self.__chatbot.generate_response(question, self.__conversation_id)[1]
         """:type : Response"""
 
         # Choose random response if confidence is lower than threshold
@@ -69,15 +69,15 @@ class AIChatBot:
 
         if self.__premoderation_callback:
             response = Response(
-                self.__premoderation_callback(message.text, response.text, premoderation_payload)
+                self.__premoderation_callback(question.text, response.text, premoderation_payload)
             )
-            if not response:
+            if not response.text:
                 return
-            self.__chatbot.learn_response(Statement(response.text), message)
+            self.__chatbot.learn_response(Statement(response.text), question)
 
         if self.__self_training and self.previous_response and \
                 '?' in self.previous_response.text and response.confidence >= self.__low_confidence_threshold:
-            self.__chatbot.learn_response(message, self.previous_response)
+            self.__chatbot.learn_response(question, self.previous_response)
         self.previous_response = response
 
         return response.text

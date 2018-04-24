@@ -30,24 +30,6 @@ def main():
     initialize_logger(log)
     sys.excepthook = error_handler
 
-    def premoderation(message, response, payload):
-        correct_response = input(
-            ' = Premoderation =\n'
-            'Chat: {} (ID {})\n'
-            'Question: {}\n'
-            'Response: {}\n'
-            ' >> '.format(
-                payload.chat.first_name if payload.chat.type == 'private' else payload.chat.title, payload.chat.id,
-                message, response))
-        if correct_response.lower().strip().startswith('remove$'):
-            correct_response = correct_response[7:]
-            chatbot.remove_statement(response)
-        if correct_response.lower().strip() == 'pass':
-            return None
-        elif not correct_response or correct_response.isspace():
-            return response
-        return correct_response
-
     global chatbot
     chatbot = AIChatBot(
         SETTINGS['BOT_NAME'],
@@ -80,6 +62,25 @@ def handle_message(message):
         tgbot.send_message(message.chat.id, response)
     else:
         log.warning('Response is empty or whitespace, sending of the message was canceled.')
+
+
+def premoderation(question, response, payload):
+    correct_response = input(
+        ' = Premoderation =\n'
+        'Question: {}\n'
+        'Response: {}\n'
+        'Chat: {} (ID {})\n'
+        ' >> '.format(
+            payload.chat.first_name if payload.chat.type == 'private' else payload.chat.title, payload.chat.id,
+            question, response))
+    if correct_response.lower().strip().startswith('remove$'):
+        correct_response = correct_response[7:]
+        chatbot.remove_statement(response)
+    if correct_response.lower().strip() == 'pass':
+        return None
+    elif not correct_response or correct_response.isspace():
+        return response
+    return correct_response
 
 
 def error_handler(exctype, value, tb):
