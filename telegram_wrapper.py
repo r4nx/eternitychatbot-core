@@ -77,7 +77,7 @@ def premoderation(question, response, payload):
         correct_response = correct_response[7:]
         chatbot.remove_statement(response)
     if correct_response.lower().strip() == 'pass':
-        return None
+        return
     elif not correct_response or correct_response.isspace():
         return response
     return correct_response
