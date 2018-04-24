@@ -64,7 +64,7 @@ class AIChatBot:
         """:type : Response"""
 
         # Choose random response if confidence is lower than threshold
-        if response.confidence < self.__low_confidence_threshold:
+        if response.confidence < self.__low_confidence_threshold and self.__low_confidence_responses:
             response = Response(choice(self.__low_confidence_responses))
 
         if self.__premoderation_callback:
@@ -75,8 +75,8 @@ class AIChatBot:
                 return
             self.__chatbot.learn_response(Statement(response.text), question)
 
-        if self.__self_training and self.previous_response and \
-                '?' in self.previous_response.text and response.confidence >= self.__low_confidence_threshold:
+        if self.__self_training and self.previous_response and '?' in self.previous_response.text and \
+                self.previous_response.confidence >= self.__low_confidence_threshold:
             self.__chatbot.learn_response(question, self.previous_response)
         self.previous_response = response
 

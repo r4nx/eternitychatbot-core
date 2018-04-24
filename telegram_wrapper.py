@@ -71,8 +71,11 @@ def premoderation(question, response, payload):
         'Response: {}\n'
         'Chat: {} (ID {})\n'
         ' >> '.format(
+            question,
+            response,
             payload.chat.first_name if payload.chat.type == 'private' else payload.chat.title, payload.chat.id,
-            question, response))
+        )
+    )
     if correct_response.lower().strip().startswith('remove$'):
         correct_response = correct_response[7:]
         chatbot.remove_statement(response)
