@@ -13,6 +13,7 @@
 import logging
 
 from chatterbot import ChatBot
+from chatterbot.response_selection import get_random_response
 
 from logger import initialize_logger
 from settings import SETTINGS
@@ -25,6 +26,7 @@ def main():
     chatbot = ChatBot(
         SETTINGS['BOT_NAME'],
         logic_adapters=['chatterbot.logic.BestMatch'],
+        response_selection_method=get_random_response,
         filters=['chatterbot.filters.RepetitiveResponseFilter'],
         trainer='chatterbot.trainers.ChatterBotCorpusTrainer',
         database=SETTINGS['DATABASE_FILE']
