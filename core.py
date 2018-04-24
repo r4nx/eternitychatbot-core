@@ -14,7 +14,6 @@
 from random import choice
 
 from chatterbot import ChatBot
-from chatterbot.conversation import Response
 from chatterbot.conversation import Statement
 from chatterbot.response_selection import get_random_response
 
@@ -65,15 +64,16 @@ class AIChatBot:
 
         # Choose random response if confidence is lower than threshold
         if response.confidence < self.__low_confidence_threshold and self.__low_confidence_responses:
-            response = Response(choice(self.__low_confidence_responses))
+            response = Statement(choice(self.__low_confidence_responses))
 
         if self.__premoderation_callback:
-            response = Response(
+            response = Statement(
                 self.__premoderation_callback(question.text, response.text, premoderation_payload)
             )
             if not response.text:
                 return
-            self.__chatbot.learn_response(Statement(response.text), question)
+            response.confidence = 1
+            self.__chatbot.learn_response(response, question)
 
         if self.__self_training and self.previous_response and '?' in self.previous_response.text and \
                 self.previous_response.confidence >= self.__low_confidence_threshold:
