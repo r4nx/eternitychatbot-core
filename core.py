@@ -16,6 +16,7 @@ from random import choice
 from chatterbot import ChatBot
 from chatterbot.conversation import Response
 from chatterbot.conversation import Statement
+from chatterbot.response_selection import get_random_response
 
 
 class AIChatBot:
@@ -34,6 +35,7 @@ class AIChatBot:
         self.__chatbot = ChatBot(
             bot_name,
             logic_adapters=['chatterbot.logic.BestMatch'],
+            response_selection_method=get_random_response,
             filters=['chatterbot.filters.RepetitiveResponseFilter'],
             database=db_file
         )
