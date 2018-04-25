@@ -74,10 +74,12 @@ class AIChatBot:
                 return
             response.confidence = 1
             self.__chatbot.learn_response(response, question)
+            self.__chatbot.storage.add_to_conversation(self.__conversation_id, question, response)
 
         if self.__self_training and self.previous_response and '?' in self.previous_response.text and \
                 self.previous_response.confidence >= self.__low_confidence_threshold:
             self.__chatbot.learn_response(question, self.previous_response)
+            self.__chatbot.storage.add_to_conversation(self.__conversation_id, self.previous_response, question)
         self.previous_response = response
 
         return response.text
