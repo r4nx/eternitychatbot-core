@@ -18,6 +18,7 @@ import telebot
 
 from core import AIChatBot
 from logger import initialize_logger
+from premoderation import console_premoderation
 from settings import SETTINGS
 
 log = logging.getLogger()
@@ -37,13 +38,32 @@ def main():
         SETTINGS['SELF_TRAINING'],
         SETTINGS['LOW_CONFIDENCE_THRESHOLD'],
         SETTINGS['LOW_CONFIDENCE_RESPONSES'],
-        premoderation if SETTINGS['PREMODERATION'] else None,
+        console_premoderation if SETTINGS['PREMODERATION'] else None,
     )
     log.info('Bot started!')
     try:
         tgbot.polling()
     except (KeyboardInterrupt, EOFError, SystemExit):
         tgbot.stop_polling()
+
+
+@tgbot.message_handler(commands=['remove'], func=lambda message: message.from_user.username in SETTINGS['ADMINS'])
+def handle_remove(message):
+    cmd = message.text.split(' ', 1)
+    if len(cmd) < 2:
+        tgbot.send_message(message.chat.id, 'Not enough arguments.')
+        return
+    if not chatbot.statement_exists(cmd[1]):
+        tgbot.send_message(message.chat.id, 'Statement not found.')
+        return
+    chatbot.remove_statement(cmd[1])
+    tgbot.send_message(message.chat.id, 'Statement removed successfully.')
+
+
+@tgbot.message_handler(commands=['exit', 'stop'], func=lambda message: message.from_user.username in SETTINGS['ADMINS'])
+def handle_exit(message):
+    tgbot.stop_polling()
+    tgbot.send_message(message.chat.id, 'Polling stopped.')
 
 
 @tgbot.message_handler(content_types=['text'],
@@ -62,28 +82,6 @@ def handle_message(message):
         tgbot.send_message(message.chat.id, response)
     else:
         log.warning('Response is empty or whitespace, sending of the message was canceled.')
-
-
-def premoderation(question, response, payload):
-    correct_response = input(
-        ' = Premoderation =\n'
-        'Question: {}\n'
-        'Response: {}\n'
-        'Chat: {} (ID {})\n'
-        ' >> '.format(
-            question,
-            response,
-            payload.chat.first_name if payload.chat.type == 'private' else payload.chat.title, payload.chat.id,
-        )
-    )
-    if correct_response.lower().strip().startswith('remove$'):
-        correct_response = correct_response[7:]
-        chatbot.remove_statement(response)
-    if correct_response.lower().strip() == 'pass':
-        return
-    elif not correct_response or correct_response.isspace():
-        return response
-    return correct_response
 
 
 def error_handler(exctype, value, tb):

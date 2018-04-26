@@ -84,6 +84,18 @@ class AIChatBot:
 
         return response.text
 
+    def statement_exists(self, statement_text):
+        """Check if statement exists.
+
+        Args:
+            statement_text (str): Statement text.
+
+        Returns:
+            bool
+
+        """
+        return True if self.__chatbot.storage.find(statement_text) else False
+
     def remove_statement(self, statement_text):
         """Remove statement from database.
 
