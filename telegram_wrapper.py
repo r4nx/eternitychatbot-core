@@ -11,11 +11,13 @@
 # in whole or in part, without the express written permission of Ranx.
 
 import logging
+import shlex
 import sys
 from time import sleep
 
 import telebot
 
+import util
 from core import AIChatBot
 from logger import initialize_logger
 from premoderation import console_premoderation
@@ -47,9 +49,24 @@ def main():
         tgbot.stop_polling()
 
 
+@tgbot.message_handler(commands=['learn'], func=lambda message: message.from_user.username in SETTINGS['ADMINS'])
+def handle_learn(message):
+    try:
+        cmd = shlex.split(util.remove_nonascii(message.text, SETTINGS['ALLOWED_CHARACTERS']))
+    except ValueError:
+        tgbot.send_message(message.chat.id, 'Invalid arguments.')
+        return
+    if len(cmd) < 3:
+        tgbot.send_message(message.chat.id, 'Not enough arguments.')
+        return
+    responses = cmd[2].split('^')
+    [chatbot.learn(cmd[1], response) for response in responses]
+    tgbot.send_message(message.chat.id, 'Learnt successfully.')
+
+
 @tgbot.message_handler(commands=['remove'], func=lambda message: message.from_user.username in SETTINGS['ADMINS'])
 def handle_remove(message):
-    cmd = message.text.split(' ', 1)
+    cmd = util.remove_nonascii(message.text, SETTINGS['ALLOWED_CHARACTERS']).split(' ', 1)
     if len(cmd) < 2:
         tgbot.send_message(message.chat.id, 'Not enough arguments.')
         return
@@ -71,16 +88,17 @@ def handle_exit(message):
                        (not SETTINGS['TESTING'] or message.chat.id == SETTINGS['TESTING_CHAT_ID'])
                        and not (message.forward_date or message.reply_to_message))
 def handle_message(message):
-    response = chatbot.get_response(message.text, message)
+    msg = util.remove_nonascii(message.text, SETTINGS['ALLOWED_CHARACTERS'])
+    response = chatbot.get_response(msg, message)
 
     if not SETTINGS['PREMODERATION']:
-        logging.info('Q: "{}" A: "{}" (Chat {})'.format(message.text, response, message.chat.id))
+        logging.info('Q: "{}" A: "{}" (Chat {})'.format(msg, response, message.chat.id))
 
     if response:
         if SETTINGS['DELAY']:
             sleep(SETTINGS['DELAY'] * len(response))
         tgbot.send_message(message.chat.id, response)
-    else:
+    elif not SETTINGS['PREMODERATION']:
         log.warning('Response is empty or whitespace, sending of the message was canceled.')
 
 

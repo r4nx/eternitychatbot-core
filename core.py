@@ -67,11 +67,10 @@ class AIChatBot:
             response = Statement(choice(self.__low_confidence_responses))
 
         if self.__premoderation_callback:
-            response = Statement(
-                self.__premoderation_callback(question.text, response.text, premoderation_payload)
-            )
-            if not response.text:
+            response = self.__premoderation_callback(question.text, response.text, premoderation_payload)
+            if not response:
                 return
+            response = Statement(response)
             response.confidence = 1
             self.__chatbot.learn_response(response, question)
             self.__chatbot.storage.add_to_conversation(self.__conversation_id, question, response)
@@ -83,6 +82,19 @@ class AIChatBot:
         self.previous_response = response
 
         return response.text
+
+    def learn(self, question, response):
+        """Learn a response.
+
+        Args:
+            question (str): Question.
+            response (str): Response
+
+        """
+        question = Statement(question)
+        response = Statement(response)
+        self.__chatbot.learn_response(response, question)
+        self.__chatbot.storage.add_to_conversation(self.__conversation_id, question, response)
 
     def statement_exists(self, statement_text):
         """Check if statement exists.
