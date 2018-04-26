@@ -51,6 +51,7 @@ def main():
 
 @tgbot.message_handler(commands=['learn'], func=lambda message: message.from_user.username in SETTINGS['ADMINS'])
 def handle_learn(message):
+    log_cmd(message)
     try:
         cmd = shlex.split(util.remove_nonascii(message.text, SETTINGS['ALLOWED_CHARACTERS']))
     except ValueError:
@@ -66,6 +67,7 @@ def handle_learn(message):
 
 @tgbot.message_handler(commands=['remove'], func=lambda message: message.from_user.username in SETTINGS['ADMINS'])
 def handle_remove(message):
+    log_cmd(message)
     cmd = util.remove_nonascii(message.text, SETTINGS['ALLOWED_CHARACTERS']).split(' ', 1)
     if len(cmd) < 2:
         tgbot.send_message(message.chat.id, 'Not enough arguments.')
@@ -79,6 +81,7 @@ def handle_remove(message):
 
 @tgbot.message_handler(commands=['exit', 'stop'], func=lambda message: message.from_user.username in SETTINGS['ADMINS'])
 def handle_exit(message):
+    log_cmd(message)
     tgbot.stop_polling()
     tgbot.send_message(message.chat.id, 'Polling stopped.')
 
@@ -100,6 +103,13 @@ def handle_message(message):
         tgbot.send_message(message.chat.id, response)
     elif not SETTINGS['PREMODERATION']:
         log.warning('Response is empty or whitespace, sending of the message was canceled.')
+
+
+def log_cmd(message):
+    log.info('{} from {}'.format(
+        util.remove_nonascii(message.text),
+        message.from_user.username if message.from_user.username else 'Unknown')
+    )
 
 
 def error_handler(exctype, value, tb):
