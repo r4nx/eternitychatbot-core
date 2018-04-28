@@ -16,7 +16,7 @@ from chatterbot.response_selection import get_random_response
 from logger import initialize_logger
 from settings import SETTINGS
 
-log = initialize_logger('trainer', 'telegramchatbot.log', SETTINGS['LOGGING_LEVEL'])
+log = initialize_logger('trainer', 'telegramchatbot.log' if SETTINGS['LOG_FILE'] else '', SETTINGS['LOGGING_LEVEL'])
 
 
 def main():

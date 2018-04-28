@@ -22,7 +22,9 @@ from logger import initialize_logger
 from premoderation import console_premoderation
 from settings import SETTINGS
 
-log = initialize_logger('telegramchatbot', 'telegramchatbot.log', SETTINGS['LOGGING_LEVEL'])
+log = initialize_logger(
+    'telegramchatbot', 'telegramchatbot.log' if SETTINGS['LOG_FILE'] else '', SETTINGS['LOGGING_LEVEL']
+)
 tgbot = telebot.TeleBot(SETTINGS['BOT_TOKEN'])
 chatbot = None
 """:type : AIChatBot"""
