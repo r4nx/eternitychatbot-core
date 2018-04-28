@@ -94,8 +94,7 @@ def handle_message(message):
     msg = util.remove_nonascii(message.text, SETTINGS['ALLOWED_CHARACTERS'])
     response = chatbot.get_response(msg, message)
 
-    if not SETTINGS['PREMODERATION']:
-        log.info('Q: "{}" A: "{}" (Chat {})'.format(msg, response, message.chat.id))
+    log.info('Q: "{}" A: "{}" (Chat {})'.format(msg, response, message.chat.id))
 
     if response:
         if SETTINGS['DELAY']:
@@ -107,7 +106,7 @@ def handle_message(message):
 
 def log_cmd(message):
     log.info('{} from {}'.format(
-        util.remove_nonascii(message.text),
+        util.remove_nonascii(message.text, SETTINGS['ALLOWED_CHARACTERS']),
         message.from_user.username if message.from_user.username else 'Unknown')
     )
 
