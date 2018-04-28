@@ -29,7 +29,10 @@ def main():
         database=SETTINGS['DATABASE_FILE']
     )
     log.info('Training started!')
-    chatbot.train(SETTINGS['CONVERSATIONS_FILE'])
+    try:
+        chatbot.train(SETTINGS['CONVERSATIONS_FILE'])
+    except FileNotFoundError:
+        log.error('File not found!')
     log.info('Training finished!')
 
 
