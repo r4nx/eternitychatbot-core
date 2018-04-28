@@ -10,7 +10,6 @@
 # This document may not be reproduced or transmitted in any form,
 # in whole or in part, without the express written permission of Ranx.
 
-import logging
 import shlex
 import sys
 from time import sleep
@@ -23,14 +22,13 @@ from logger import initialize_logger
 from premoderation import console_premoderation
 from settings import SETTINGS
 
-log = logging.getLogger()
+log = initialize_logger('telegramchatbot', 'telegramchatbot.log', SETTINGS['LOGGING_LEVEL'])
 tgbot = telebot.TeleBot(SETTINGS['BOT_TOKEN'])
 chatbot = None
 """:type : AIChatBot"""
 
 
 def main():
-    initialize_logger(log)
     sys.excepthook = error_handler
 
     global chatbot
@@ -95,7 +93,7 @@ def handle_message(message):
     response = chatbot.get_response(msg, message)
 
     if not SETTINGS['PREMODERATION']:
-        logging.info('Q: "{}" A: "{}" (Chat {})'.format(msg, response, message.chat.id))
+        log.info('Q: "{}" A: "{}" (Chat {})'.format(msg, response, message.chat.id))
 
     if response:
         if SETTINGS['DELAY']:

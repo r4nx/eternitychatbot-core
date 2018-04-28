@@ -12,21 +12,23 @@
 
 import logging
 
-from settings import SETTINGS
 
+def initialize_logger(name, log_file, level=logging.INFO):
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
 
-def initialize_logger(logger):
-    logger.setLevel(SETTINGS['CONSOLE_LOGGING_LEVEL'])
-
+    # Console log handler
     handler = logging.StreamHandler()
-    handler.setLevel(SETTINGS['CONSOLE_LOGGING_LEVEL'])
+    handler.setLevel(logging.INFO)
     formatter = logging.Formatter('%(levelname)s - %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
-    if SETTINGS['LOG_FILE']:
-        handler = logging.FileHandler('telegramchatbot.log', delay=True)
-        handler.setLevel(SETTINGS['FILE_LOGGING_LEVEL'])
-        formatter = logging.Formatter('%(levelname)s - [%(asctime)s] %(filename)s[L:%(lineno)d] %(message)s')
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
+    # File log handle
+    handler = logging.FileHandler(log_file, delay=True)
+    handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(levelname)s - [%(asctime)s] %(filename)s[L:%(lineno)d] %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    return logger

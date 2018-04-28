@@ -10,19 +10,16 @@
 # This document may not be reproduced or transmitted in any form,
 # in whole or in part, without the express written permission of Ranx.
 
-import logging
-
 from chatterbot import ChatBot
 from chatterbot.response_selection import get_random_response
 
 from logger import initialize_logger
 from settings import SETTINGS
 
-log = logging.getLogger()
+log = initialize_logger('trainer', 'telegramchatbot.log', SETTINGS['LOGGING_LEVEL'])
 
 
 def main():
-    initialize_logger(log)
     chatbot = ChatBot(
         SETTINGS['BOT_NAME'],
         logic_adapters=['chatterbot.logic.BestMatch'],
