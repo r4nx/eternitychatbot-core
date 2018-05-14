@@ -1,2 +1,1 @@
-pyTelegramBotAPI
-chatterbot
+chatterbot>=0.8.7
