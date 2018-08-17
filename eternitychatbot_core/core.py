@@ -36,7 +36,7 @@ class AIChatBot:
             self_training (bool): Will bot train itself.
             low_confidence_threshold (int): Confidence threshold, if lower - low_confidence_responses will be used.
             low_confidence_responses (list): Responses that will be used if confidence is lower than threshold.
-            random_response (bool): If true, choose random response instead of the most frequent
+            random_response (bool): If true, choose random response instead of the most frequent.
             premoderation_callback (function): Premoderation function, set None to disable.
         """
         self.__chatbot = ChatBot(
