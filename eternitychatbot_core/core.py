@@ -22,12 +22,12 @@ from random import choice
 
 from chatterbot import ChatBot
 from chatterbot.conversation import Statement
-from chatterbot.response_selection import get_random_response
+from chatterbot.response_selection import get_random_response, get_most_frequent_response
 
 
 class AIChatBot:
     def __init__(self, bot_name, db_file, self_training, low_confidence_threshold, low_confidence_responses,
-                 premoderation_callback=None):
+                 random_response=True, premoderation_callback=None):
         """Create new AIChatBot instance.
 
         Args:
@@ -36,12 +36,13 @@ class AIChatBot:
             self_training (bool): Will bot train itself.
             low_confidence_threshold (int): Confidence threshold, if lower - low_confidence_responses will be used.
             low_confidence_responses (list): Responses that will be used if confidence is lower than threshold.
+            random_response (bool): If true, choose random response instead of the most frequent
             premoderation_callback (function): Premoderation function, set None to disable.
         """
         self.__chatbot = ChatBot(
             bot_name,
             logic_adapters=['chatterbot.logic.BestMatch'],
-            response_selection_method=get_random_response,
+            response_selection_method=get_random_response if random_response else get_most_frequent_response,
             filters=['chatterbot.filters.RepetitiveResponseFilter'],
             database=db_file
         )
