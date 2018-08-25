@@ -15,7 +15,7 @@ def readme():
 
 setup(
     name='eternitychatbot-core',
-    version='2.0.0a0',
+    version='2.0.1a0',
     description='AI chatbot',
     long_description=readme(),
     author='Ranx',

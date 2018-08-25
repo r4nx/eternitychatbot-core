@@ -19,32 +19,41 @@
 
 
 from random import choice
+import warnings
 
 from chatterbot import ChatBot
 from chatterbot.conversation import Statement
 from chatterbot.response_selection import get_random_response, get_most_frequent_response
 
+warnings.filterwarnings('default', category=DeprecationWarning, module=__name__)
+
 
 class AIChatBot:
-    def __init__(self, bot_name, db_file, self_training, low_confidence_threshold, low_confidence_responses,
-                 random_response=True, premoderation_callback=None):
+    def __init__(self, bot_name, self_training, low_confidence_threshold, low_confidence_responses,
+                 random_response=True, premoderation_callback=None, db_file=None, db_uri=None):
         """Create new AIChatBot instance.
 
         Args:
             bot_name (str): Bot name.
-            db_file (str): Database file.
+            db_uri (str): Database URI.
+            db_file (str): Database file (should not be used, left for backward compatibility)
             self_training (bool): Will bot train itself.
-            low_confidence_threshold (int): Confidence threshold, if lower - low_confidence_responses will be used.
+            low_confidence_threshold (float): Confidence threshold, if lower - low_confidence_responses will be used.
             low_confidence_responses (list): Responses that will be used if confidence is lower than threshold.
             random_response (bool): If true, choose random response instead of the most frequent.
             premoderation_callback (function): Premoderation function, set None to disable.
         """
+        # Backward compatibility
+        if db_uri is None and db_file is not None:
+            db_uri = 'sqlite:///{}'.format(db_file)
+            warnings.warn('use db_uri instead of deprecated db_file, it will be removed in the future',
+                          DeprecationWarning)
         self.__chatbot = ChatBot(
             bot_name,
             logic_adapters=['chatterbot.logic.BestMatch'],
             response_selection_method=get_random_response if random_response else get_most_frequent_response,
             filters=['chatterbot.filters.RepetitiveResponseFilter'],
-            database=db_file
+            database_uri=db_uri
         )
         self.__conversation_id = self.__chatbot.storage.create_conversation()
         self.previous_response = None
